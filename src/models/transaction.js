@@ -8,10 +8,10 @@ module.exports = (sequelize, DataTypes) => {
         userid: DataTypes.INTEGER,
         nickname: DataTypes.STRING,
         address: DataTypes.STRING,
-        from: DataTypes.STRING,
-        to: DataTypes.STRING,
+        fromaddr: DataTypes.STRING,
+        toaddr: DataTypes.STRING,
         qty: DataTypes.INTEGER,
-        decimal: DataTypes.INTEGER,
+        tkdecimal: DataTypes.INTEGER,
         tkname: DataTypes.STRING,
         timeline: DataTypes.INTEGER
     }, {});
