@@ -8,12 +8,9 @@ module.exports = (sequelize, DataTypes) => {
         userid: DataTypes.INTEGER,
         nickname: DataTypes.STRING,
         address: DataTypes.STRING,
-        fromaddr: DataTypes.STRING,
-        toaddr: DataTypes.STRING,
         qty: DataTypes.INTEGER,
         tkdecimal: DataTypes.INTEGER,
         tkname: DataTypes.STRING,
-        timeline: DataTypes.INTEGER
     }, {});
     Transaction.associate = function(models) {
 

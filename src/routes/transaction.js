@@ -4,16 +4,18 @@ const router = express.Router();
 
 const { Api } = require('@cennznet/api');
 const { endpoint, link, Assets, Decimal } = require("../config/urls");
+
 const telegramServices = require("../telegramServices");
+const sendNotificationToLimited = require("../telegramServices");
+const sendNotificationToHurryUp = require("../telegramServices");
 
-
-let amtLimit = 500;
+let assetData = null;
 
 function getSetting() {
     try {
-        Setting.findOne().then((res) => {
+        Transaction.findAll().then((res) => {
             if(res) {
-                amtLimit = parseInt(res.limit);
+                assetData = res;
             }
         })
     } catch (e) {
@@ -32,8 +34,7 @@ async function getSystemEvents() {
                 if( events.length > 1 ){
                     events.forEach(async (record, idx) => {
                         const { event, phase } = record;
-                        // const types = event.typeDef;
-                        // console.log("event data :: ", JSON.stringify(event.data))
+
                         if( event.method.toLocaleLowerCase() === "transferred" ){
                             let temp = {
                                 id: event.data[0].toString(),
@@ -41,7 +42,6 @@ async function getSystemEvents() {
                                 to: event.data[2].toString(),
                                 amt: event.data[3]
                             };
-                            // console.log(JSON.stringify(temp), "<==== transaction data");
                             await processTransData(temp);
                         }
                     });
@@ -63,45 +63,49 @@ async function processTransData(data) {
     const today = new Date();
     const date = today.getFullYear()+'/'+(today.getMonth()+1)+'/'+today.getDate() + ' ';
     const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-    const timestamp = today.getTime();
 
     const amt = (parseInt(data.amt)/10000).toFixed(4);
-    
-    if( fromOne ) {
-        const body = `<b>Wallet: </b><i>${data.from}</i>\n<b>NickName: </b><i>${fromOne.nickname}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.from}">${data.from}</a>`
-        await telegramServices.sendNotification(body);
-        Transaction.create({
-            userid: parseInt(fromOne.userid),
-            nickname: fromOne.nickname,
-            address: fromOne.address,
-            fromaddr: data.from,
-            toaddr: data.to,
-            qty: parseInt(data.amt),
-            tkdecimal: Decimal[`${data.id}`],
-            tkname: Assets[`${data.id}`],
-            timeline: timestamp,
-        }).then((res) => {
-        }).catch((err) =>{});
-    } else if( toOne ) {
-        const body = `<b>Wallet: </b><i>${data.to}</i>\n<b>NickName: </b><i>${toOne.nickname}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.from}">${data.from}</a>`
-        await telegramServices.sendNotification(body);
-        Transaction.create({
-            userid: parseInt(toOne.userid),
-            nickname: toOne.nickname,
-            address: toOne.address,
-            fromaddr: data.from,
-            toaddr: data.to,
-            qty: parseInt(data.amt),
-            tkdecimal: Decimal[`${data.id}`],
-            tkname: Assets[`${data.id}`],
-            timeline: timestamp,
-        }).then((res) => {
-        }).catch((err) =>{});
-    } else {
+    const currentAsset1 = assetData.filter((_i) => _i.dataValues.address === data.id.replace(',',''));
+    let currentAsset = null;
+    if( currentAsset1.length > 0 ) {
+        currentAsset = currentAsset1[0].dataValues;
+    }
 
-        if( amtLimit <= parseInt(data.amt) ) {
-            const body = `<b>Token: </b><i>${Assets[`${data.id}`]}</i>\n<b>Qty: </b><i>${amt}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.from}">${data.from}</a>`
-            await telegramServices.sendNotification(body);
+    if( fromOne ) {
+        const body = `<b>Wallet: </b><i>${data.from}</i>\n<b>NickName: </b><i>${fromOne.nickname}</i>\n<b>Qty: </b><i>${amt}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.from}">${data.from}</a>`;
+        if( fromOne.active ) {
+            sendNotificationToHurryUp(body);
+        } else {
+            if( !currentAsset ){
+                telegramServices.sendNotification(body);
+            } else if(parseInt(currentAsset.qty) < parseInt(data.amt)) {
+                telegramServices.sendNotification(body);
+            } else {
+                sendNotificationToLimited(body);
+            }
+        }
+    } else if( toOne ) {
+        const body = `<b>Wallet: </b><i>${data.to}</i>\n<b>NickName: </b><i>${toOne.nickname}</i>\n<b>Qty: </b><i>${amt}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.to}">${data.to}</a>`
+        if( toOne.active ) {
+            sendNotificationToHurryUp(body);
+        } else {
+            if( !currentAsset ){
+                telegramServices.sendNotification(body);
+            } else if(parseInt(currentAsset.qty) < parseInt(data.amt)) {
+                telegramServices.sendNotification(body);
+            } else {
+                sendNotificationToLimited(body);
+            }
+        }
+    } else {
+        const tkname = currentAsset === null? Assets[(`${data.id}`).replace(',', '')]: currentAsset.tkname;
+        const body = `<b>Token: </b><i>${tkname}</i>\n<b>Qty: </b><i>${amt}</i>\n<b>DateTime: </b><i>${date}${time}</i>\n<b>Link: </b><a href="${link}${data.from}">${data.from}</a>`
+        if( !currentAsset ){
+            telegramServices.sendNotification(body);
+        } else if(parseInt(currentAsset.qty) < parseInt(data.amt)) {
+            telegramServices.sendNotification(body);
+        } else {
+            sendNotificationToLimited(body);
         }
     }
 }
@@ -147,6 +151,60 @@ router.get("/delete/:id", (req, res) => {
         }
     }).then((addr) => {
             res.json({success: true, result: {id: req.params.id}});
+    }).catch((error) => {
+        res.status(error.statusCode).send(error.message);
+    });
+});
+
+
+router.post("/add", (req, res) => {
+    Transaction.findOne({
+        where: {
+            address: req.body.address
+        }
+    }).then((addr) => {
+        if(addr) {
+            res.json({ success: false, msg: "This asset already is being tracking!"});
+        } else {
+            Transaction.create({
+                userid: parseInt(req.body.userid),
+                nickname: req.body.nickname,
+                address: req.body.address,
+                tkname: req.body.tkname,
+                qty: parseInt(req.body.qty),
+                tkdecimal: parseInt(req.body.tkdecimal)
+            }).then((result) => {
+                res.json({success: true, result});
+            })
+        }
+    }).catch((error) => {
+        res.status(error.statusCode).send(error.message);
+    });
+});
+
+router.post("/update", (req, res) => {
+    Transaction.update({
+        nickname: req.body.nickname,
+        address: req.body.address,
+        tkname: req.body.tkname,
+        qty: parseInt(req.body.qty),
+        tkdecimal: parseInt(req.body.tkdecimal)
+    },{
+        where: {
+            id: req.body.id
+        }
+    }).then((addr) => {
+        if(addr) {
+            res.json({
+                success: true,
+                result: addr
+            })
+        } else {
+            res.json({
+                success: false,
+                msg: "Updating failed!"
+            })
+        }
     }).catch((error) => {
         res.status(error.statusCode).send(error.message);
     });

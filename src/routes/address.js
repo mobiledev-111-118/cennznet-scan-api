@@ -19,7 +19,8 @@ router.get("/get/:uid", (req, res) => {
 router.post("/add", (req, res) => {
     Address.findOne({
         where: {
-            address: req.body.addr
+            address: req.body.addr,
+            userid: parseInt(req.body.userid)
         }
     }).then((addr) => {
         if(addr) {
@@ -28,7 +29,8 @@ router.post("/add", (req, res) => {
             Address.create({
                 userid: req.body.userid,
                 nickname: req.body.nickname,
-                address: req.body.addr
+                address: req.body.addr,
+                active: false
             }).then((result) => {
                 res.json({success: true, result});
             })
@@ -46,6 +48,30 @@ router.post("/update", (req, res) => {
     }, { 
         where: {
             id: req.body.id
+        }
+    }).then((result) => {
+        if( result ) {
+            res.json({
+                success: true,
+                result
+            })
+        } else {
+            res.json({
+                success: false,
+                msg: "Updating failed!"
+            })
+        }
+    }).catch((error) => {
+        res.status(error.statusCode).send(error.message);
+    });
+});
+
+router.post("/updateActive", (req, res) => {
+    Address.update({
+        active: req.body.active
+    }, { 
+        where: {
+            id: parseInt(req.body.id)
         }
     }).then((result) => {
         if( result ) {
