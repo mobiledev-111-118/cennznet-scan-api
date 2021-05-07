@@ -29,7 +29,6 @@ const sendNotification = (body) => {
 };
 
 const sendNotificationToHurryUp = (body) => {
-
     return new Promise((resolve, reject) => {
         try {
             let data = {
