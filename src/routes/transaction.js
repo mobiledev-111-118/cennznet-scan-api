@@ -1,9 +1,9 @@
 const express = require("express");
-const { Transaction, Address, Setting } = require("../models");
+const { Transaction, Address } = require("../models");
 const router = express.Router();
 
 const { Api } = require('@cennznet/api');
-const { endpoint, link, Assets, Decimal } = require("../config/urls");
+const { endpoint, link, Assets } = require("../config/urls");
 
 const telegramServices = require("../telegramServices");
 
@@ -21,6 +21,7 @@ function getSetting() {
     }
     
 }
+
 async function getSystemEvents() {
     try{
         const api = await Api.create({
@@ -60,8 +61,7 @@ async function processTransData(data) {
     const fromOne = await IsExist(data.from);
     const toOne = await IsExist(data.to);
     const today = new Date();
-    const date = today.getFullYear()+'/'+(today.getMonth()+1)+'/'+today.getDate() + ' ';
-    const time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+    const date = today.toUTCString();
 
     const amt = (parseInt(data.amt)/10000).toFixed(4);
     const currentAsset1 = assetData.filter((_i) => _i.dataValues.address === data.id.replace(',',''));
@@ -71,26 +71,22 @@ async function processTransData(data) {
     }
     const tkname = currentAsset === null? Assets[(`${data.id}`).replace(',', '')]: currentAsset.tkname;
     if( fromOne ) {
-        const body = `<i>Wallet: </i><i>${data.from}</i>\n<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}${time}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
+        const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
         if( fromOne.dataValues.active ) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
     } else if( toOne ) {
-        const body = `<i>Wallet: </i><i>${data.to}</i>\n<i>NickName: </i><b>${toOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}${time}</i>\n<i>Link: </i><a href="${link}${data.to}">${data.to}</a>`
+        const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
         if( toOne.dataValues.active ) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
     } else {
-        const body = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}${time}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`
-        if( !currentAsset ){
-            telegramServices.sendNotification(body);
-        } else if(parseInt(currentAsset.qty) === 0 || parseInt(currentAsset.qty) > parseInt(data.amt)) {
-            telegramServices.sendNotification(body);
-        } else {
+        const body = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
+        if(parseInt(currentAsset.qty) !== 0 && parseInt(currentAsset.qty) * 10000 <= parseInt(data.amt) ) {
             telegramServices.sendNotificationToLimited(body);
         }
     }
@@ -196,10 +192,13 @@ router.post("/update", (req, res) => {
 });
 
 router.get("/test", (req, res) =>{
-    const body = `<i>Wallet: </i><i>5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</i>\n<i>NickName: </i><b>Test</b>\n<i>Token: </i><b>CPAY</b>\n<i>Qty: </i><b>1000.000</b>\n<i>DateTime: </i><i>date</i>\n<i>Link: </i><a href="https://google.com">5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</a>`;
-    telegramServices.sendNotificationToHurryUp(body)
-    res.json({success: true});
-})
+    // const body = `<i>Wallet: </i><i>5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</i>\n<i>NickName: </i><b>Test</b>\n<i>Token: </i><b>CPAY</b>\n<i>Qty: </i><b>1000.000</b>\n<i>DateTime: </i><i>date</i>\n<i>Link: </i><a href="https://google.com">5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</a>`;
+    // telegramServices.sendNotificationToHurryUp(body)
+    // const today = new Date();
+    // const date = today.toUTCString();
+    // res.json({success: true, date});
+});
+
 setInterval(getSetting, 5000);
 
 setTimeout(getSystemEvents, 8000);
