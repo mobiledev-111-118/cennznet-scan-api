@@ -19,7 +19,6 @@ function getSetting() {
     } catch (e) {
         console.log("err in getting setting data :: ", e)
     }
-    
 }
 
 async function getSystemEvents() {
@@ -54,7 +53,6 @@ async function getSystemEvents() {
         console.log(error)
         setTimeout(getSystemEvents, 2000);
     }
-    
 }
 
 async function processTransData(data) {
@@ -71,23 +69,26 @@ async function processTransData(data) {
     }
     const tkname = currentAsset === null? Assets[(`${data.id}`).replace(',', '')]: currentAsset.tkname;
     if( fromOne ) {
-        const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
+        const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(OUT)</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
         if( fromOne.dataValues.active ) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
+        // console.log("************************* from transaction ******************")
     } else if( toOne ) {
-        const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
+        const body = `<i>NickName: </i><b>${toOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(IN)</b>\n<i>Wallet: </i><i>${data.to}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.to}">${data.to}</a>`;
         if( toOne.dataValues.active ) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
-    } else {
+        // console.log("************************* to transaction ******************")
+    } else if(currentAsset) {
         const body = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
         if(parseInt(currentAsset.qty) !== 0 && parseInt(currentAsset.qty) * 10000 <= parseInt(data.amt) ) {
             telegramServices.sendNotificationToLimited(body);
+            // console.log("************************* Asset tracking ******************")
         }
     }
 }
@@ -109,11 +110,6 @@ function IsExist(addr) {
 }
 
 router.get("/get/:uid", async (req, res) => {
-    // {
-    //     where: {
-    //         userid: parseInt(req.params.uid)
-    //     }
-    // }
     Transaction.findAll().then((data) => {
         if(data) {
             res.json({success: true, result: data});
@@ -121,7 +117,7 @@ router.get("/get/:uid", async (req, res) => {
             res.json({success: false, result: []});
         }
     }).catch((error) => {
-        res.json({success: false, resulte: error})
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -131,9 +127,9 @@ router.get("/delete/:id", (req, res) => {
             id: parseInt(req.params.id)
         }
     }).then((addr) => {
-            res.json({success: true, result: {id: req.params.id}});
+        res.json({success: true, result: {id: req.params.id}});
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -159,7 +155,7 @@ router.post("/add", (req, res) => {
             })
         }
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -187,16 +183,16 @@ router.post("/update", (req, res) => {
             })
         }
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
 router.get("/test", (req, res) =>{
     // const body = `<i>Wallet: </i><i>5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</i>\n<i>NickName: </i><b>Test</b>\n<i>Token: </i><b>CPAY</b>\n<i>Qty: </i><b>1000.000</b>\n<i>DateTime: </i><i>date</i>\n<i>Link: </i><a href="https://google.com">5E6okk5DSQTdkxqMo9b66BmmWCYfU3XdWcxhP65382Pt32Ug</a>`;
     // telegramServices.sendNotificationToHurryUp(body)
-    // const today = new Date();
-    // const date = today.toUTCString();
-    // res.json({success: true, date});
+    const today = new Date();
+    const date = today.toUTCString();
+    res.json({success: true, date});
 });
 
 setInterval(getSetting, 5000);

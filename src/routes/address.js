@@ -3,11 +3,7 @@ const { Address } = require("../models");
 const router = express.Router();
 
 router.get("/get/:uid", (req, res) => {
-    Address.findAll({
-        where: {
-            userid: parseInt(req.params.uid)
-        }
-    }).then((addr) => {
+    Address.findAll().then((addr) => {
         if(addr) {
             res.json({success: true, result: addr});
         }
@@ -20,7 +16,7 @@ router.post("/add", (req, res) => {
     Address.findOne({
         where: {
             address: req.body.addr,
-            userid: parseInt(req.body.userid)
+            // userid: parseInt(req.body.userid)
         }
     }).then((addr) => {
         if(addr) {
@@ -36,7 +32,7 @@ router.post("/add", (req, res) => {
             })
         }
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -62,7 +58,7 @@ router.post("/update", (req, res) => {
             })
         }
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -86,7 +82,7 @@ router.post("/updateActive", (req, res) => {
             })
         }
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
@@ -98,7 +94,7 @@ router.get("/delete/:id", (req, res) => {
     }).then((addr) => {
             res.json({success: true, result: {id: req.params.id}});
     }).catch((error) => {
-        res.status(error.statusCode).send(error.message);
+        res.json({ success: false, msg: error.message});
     });
 });
 
