@@ -9,8 +9,8 @@ const router = express.Router();
 
 router.post("/signup", (req, res) => {
     User.findAll().then((user) => {
-        if(user.length !== 0) {
-            res.json({success: false, msg: "Admin already exist!"});
+        if(user.length !== 0 && user.length === 3) {
+            res.json({success: false, msg: "Admins already exist!"});
         } else {
             bcrypt.hash(req.body.password, config.bcrypt.saltRounds, (err, hash) => {
                 User.create({

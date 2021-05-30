@@ -31,7 +31,7 @@ async function getSystemEvents() {
             api.query.system.events((events) => {
                 if( events.length > 1 ){
                     events.forEach(async (record, idx) => {
-                        const { event, phase } = record;
+                        const { event } = record;
 
                         if( event.method.toLocaleLowerCase() === "transferred" ){
                             let temp = {
@@ -50,7 +50,6 @@ async function getSystemEvents() {
             setTimeout(getSystemEvents, 2000);
         }
     } catch(error) {
-        console.log(error)
         setTimeout(getSystemEvents, 2000);
     }
 }
@@ -61,34 +60,31 @@ async function processTransData(data) {
     const today = new Date();
     const date = today.toUTCString();
 
-    const amt = (parseInt(data.amt)/10000).toFixed(4);
-    const currentAsset1 = assetData.filter((_i) => _i.dataValues.address === data.id.replace(',',''));
+    const amt = (parseInt(data.amt) / 10000).toFixed(4);
+    const currentAsset1 = assetData.filter((_i) => _i.dataValues.address === data.id.replace(',', ''));
     let currentAsset = null;
-    if( currentAsset1.length > 0 ) {
+    if (currentAsset1.length > 0) {
         currentAsset = currentAsset1[0].dataValues;
     }
-    const tkname = currentAsset === null? Assets[(`${data.id}`).replace(',', '')]: currentAsset.tkname;
-    if( fromOne ) {
+    const tkname = currentAsset === null ? Assets[`${data.id}`.replace(',', '')] : currentAsset.tkname;
+    if (fromOne) {
         const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(OUT)</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
-        if( fromOne.dataValues.active ) {
+        if (fromOne.dataValues.active) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
-        // console.log("************************* from transaction ******************")
-    } else if( toOne ) {
+    } else if (toOne) {
         const body = `<i>NickName: </i><b>${toOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(IN)</b>\n<i>Wallet: </i><i>${data.to}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.to}">${data.to}</a>`;
-        if( toOne.dataValues.active ) {
+        if (toOne.dataValues.active) {
             telegramServices.sendNotificationToHurryUp(body);
         } else {
             telegramServices.sendNotification(body);
         }
-        // console.log("************************* to transaction ******************")
-    } else if(currentAsset) {
+    } else if (currentAsset) {
         const body = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
-        if(parseInt(currentAsset.qty) !== 0 && parseInt(currentAsset.qty) * 10000 <= parseInt(data.amt) ) {
+        if (parseInt(currentAsset.qty) !== 0 && parseInt(currentAsset.qty) * 10000 <= parseInt(data.amt)) {
             telegramServices.sendNotificationToLimited(body);
-            // console.log("************************* Asset tracking ******************")
         }
     }
 }

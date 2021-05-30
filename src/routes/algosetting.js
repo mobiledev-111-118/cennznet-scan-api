@@ -1,11 +1,9 @@
 const express = require("express");
-const { Setting } = require("../models");
-const utils = require("../utils");
-
+const { Algosetting } = require("../models");
 const router = express.Router();
 
 router.get("/get", (req, res) => {
-    Setting.findAll().then((addr) => {
+    Algosetting.findAll().then((addr) => {
         if(addr) {
             res.json({success: true, result: addr});
         }
@@ -15,9 +13,9 @@ router.get("/get", (req, res) => {
 });
 
 router.post("/add", (req, res) => {
-    Setting.findOne().then((addr) => {
+    Algosetting.findOne().then((addr) => {
         if(addr) {
-            Setting.update({
+            Algosetting.update({
                 limit: parseInt(req.body.limit),
                 start: parseInt(req.body.start),
                 end: parseInt(req.body.end)
@@ -31,7 +29,7 @@ router.post("/add", (req, res) => {
                 res.json({success: false, result: "Updating failed!"});
             })
         } else {
-            Setting.create({
+            Algosetting.create({
                 limit: parseInt(req.body.limit),
                 start: parseInt(req.body.start),
                 end: parseInt(req.body.end)
@@ -44,26 +42,5 @@ router.post("/add", (req, res) => {
     });
 });
 
-router.get("/cennzholders/:id", (req, res) => {
-    const page = parseInt(req.params.id);
-    utils.getTopHolders(page).then((result) => {
-        if( result ) {
-            res.json({
-                success: true,
-                result
-            })
-        } else {
-            res.json({
-                success: false,
-                msg: "Holders getting error!"
-            })    
-        }
-    }).catch((err) => {
-        res.json({
-            success: false,
-            msg: "Holders getting error!"
-        })
-    })
-})
 
 module.exports = router;

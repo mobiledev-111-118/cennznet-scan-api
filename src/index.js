@@ -10,11 +10,12 @@ const address = require("./routes/address");
 const transaction = require("./routes/transaction");
 const setting = require("./routes/setting");
 
+const algoaddress = require("./routes/algoaddress");
+const algoasset = require("./routes/algoassets");
+const algosetting = require("./routes/algosetting");
+
 const app = express();
 
-var corsOptions = {
-    origin: "http://localhost:8080"
-};
 const PORT = process.env.PORT || 8080;
 
 app.use(cors());
@@ -31,6 +32,10 @@ app.use('/user', user);
 app.use('/address', address);
 app.use('/transaction', transaction);
 app.use('/setting', setting);
+
+app.use('/algo_address', algoaddress);
+app.use('/algo_asset', algoasset);
+app.use('/algo_setting', algosetting);
 
 app.use((req, res, next) => {
     const err = new Error('Not Found');
