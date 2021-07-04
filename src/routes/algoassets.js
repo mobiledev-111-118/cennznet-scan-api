@@ -2,7 +2,7 @@ const express = require("express");
 const { Algoasset, Algoaddress } = require("../models");
 const router = express.Router();
 
-const { algo_link } = require("../config/urls");
+const { algo_link, AlgoAssets } = require("../config/urls");
 
 const telegramServices = require("../telegramServices");
 
@@ -11,6 +11,13 @@ const utils = require("../utils");
 let assetData = [];
 let addressData = [];
 let start = 0;
+
+let intervalId = 0;
+let intervalId1 = 0;
+let bigData = [];
+let bigData1 = [];
+let timer1 = null;
+let timer2 = null;
 
 utils.getLatestBlockNumber().then((res) => {
     if( res ) {
@@ -49,60 +56,110 @@ async function getSystemEvents() {
         const temp = await utils.getLatestBlockNumber();
         const end = temp.lastRound;
         await processAddressTracking(end);
-        setTimeout(() => {
-            processAssetsTracking(end);
-        }, 1000)
+        await processAssetsTracking(end);
     } catch(error) {
         console.log(error)
-        setInterval(getSystemEvents, 30000);
+        setInterval(getSystemEvents, 80000);
     }
 }
 
 async function processAssetsTracking(end) {
+    const today = new Date();
+    const date = today.toUTCString();
     assetData.forEach((element, index) => {
         const decimals = parseInt(element.tkdecimal);
         const divide = Math.pow(10, decimals);
         utils.getTransactionsByAsset(element.address, parseInt(element.qty)*divide, start, end).then((res) => {
-            if( res && res?.length ) {
-                res.forEach(async (tx) => {
+            let temp = [];
+            let body = [];
+            if( res && res.length > 0 ) {
+                res.forEach(async (tx, idx) => {
                     if( !IsExist(tx.sender) && !IsExist(tx[`asset-transfer-transaction`][`receiver`])) {
-                        const nickname = element.nickname;
                         const tkname = element.tkname;
                         const amt = (parseInt(tx[`asset-transfer-transaction`][`amount`])/divide).toFixed(4);
-                        sendNotifyByAsset(tx.id, tx.sender, nickname, tkname, amt);
+                        if( !IsExistTx(temp, tx.id) === 0 ) {
+                            const item = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${tx.id}">${tx.id}</a>`
+                            bigData.push(item);
+                            temp.push(tx.id);
+                            // sendNotifyByAsset(body);
+                        }
+                    }
+                    if( !timer1 && idx === res.length - 1) {
+                        sendNotifyByAsset(body);
+                        temp = [];
+                    }
+                    if( index === assetData.length - 1 && start !== end && idx === res.length - 1 ){
+                        start = end;
+                        utils.updateAlgoSetting(end);
                     }
                 })
+            } else if( index === assetData.length - 1 && start !== end ){
+                start = end;
+                utils.updateAlgoSetting(end);
             }
         })
-        if( index === assetData.length - 1 && start !== end ){
-            start = end;
-            utils.updateAlgoSetting(end);
-        }
+        
     })
 }
 
-function sendNotifyByAsset(txId, addr, nickname, tkname, amt) {
-    const today = new Date();
-    const date = today.toUTCString();
-    const body = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${txId}">${txId}</a>`;
-    telegramServices.sendNotificationToLimitedAlgo(body);
+function sendNotifyByAsset(body) {
+    timer1 = setInterval(() => {
+        if( intervalId === bigData.length || bigData.length === 0 ) {
+            clearInterval(timer1);
+            timer1 = null;
+            intervalId = 0;
+            bigData = [];
+        } else {
+            telegramServices.sendNotificationToLimitedAlgo(bigData[intervalId]);
+            intervalId++;
+        }
+    }, 2500)
+    // body.forEach((item) => {
+        // telegramServices.sendNotificationToLimitedAlgo(body);
+    // })
 }
 
 async function processAddressTracking(end) {
-    addressData.forEach((element) => {
+    let curAsset = null;
+    // let tempAssetId = 0;
+    const today = new Date();
+    const date = today.toUTCString();
+    addressData.forEach((element, index) => {
         utils.getTransactionsByAddress(element.address, start, end).then((res) => {
+            const temp = [];
             if( res && res?.length ) {
-                res.forEach(async (tx) => {
+                res.forEach(async(tx, idx) => {
                     const inout = tx.sender === element.address? "OUT" : "IN";
-                    const curAsset = tx[`payment-transaction`]? {decimals: 0, unit: "ALGO"}: await utils.getAssetOne(tx[`asset-transfer-transaction`][`asset-id`]);
-                    const nickname = element.nickname;
-                    const tkname = curAsset.unit;
-                    const amt1 = tx[`payment-transaction`]? tx[`payment-transaction`][`amount`] : tx[`asset-transfer-transaction`][`amount`];
-                    const dec = parseInt(curAsset.decimals);
-                    const divide = Math.pow(10, dec);
-                    const amt = (parseInt(amt1)/divide).toFixed(4);
-                    if( parseInt(amt1) > 0 ) {
-                        sendNotifyByAddr(tx.id, element.address, inout, nickname, tkname, amt, element.active);
+                    // let body = [];
+                    if( tx[`payment-transaction`] ) {
+                        curAsset = {decimals: 6, unit: "ALGO"};
+                        // tempAssetId = 0
+                    } else {
+                        // tempAssetId = parseInt(tx[`asset-transfer-transaction`][`asset-id`]);
+                        curAsset = AlgoAssets[`${tx[`asset-transfer-transaction`][`asset-id`]}`];
+                        // curAsset = await utils.getAssetOne(tx[`asset-transfer-transaction`][`asset-id`]);
+                    }
+                    if( curAsset ) {
+                        const nickname = element.nickname;
+                        const tkname = curAsset.unit;
+                        const amt1 = tx[`payment-transaction`]? tx[`payment-transaction`][`amount`] : tx[`asset-transfer-transaction`][`amount`];
+                        const dec = parseInt(curAsset.decimals);
+                        const divide = Math.pow(10, dec);
+                        const amt = (parseInt(amt1)/divide).toFixed(4);
+
+                        if( IsExistTx(temp, tx.id) === 0 ){
+                            temp.push(tx.id);
+                            const item = `<i>NickName: </i><b>${nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(${inout})</b>\n<i>Wallet: </i><i>${element.address}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${tx.id}">${tx.id}</a>`;
+                            bigData1.push({
+                                item: item,
+                                active: element.active
+                            })
+                            // sendNotifyByAddr(item, element.active);
+                        }
+                    }
+                    if( idx === res.length - 1 && !timer2 ){
+                        // sendNotifyByAddr(body, element.active);
+                        sendNotifyByAddr()
                     }
                 })
             }
@@ -110,21 +167,40 @@ async function processAddressTracking(end) {
     })
 }
 
-function sendNotifyByAddr(txId, addr, inout, nickname, tkname, amt, active) {
-    const today = new Date();
-    const date = today.toUTCString();
-
-    const body = `<i>NickName: </i><b>${nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(${inout})</b>\n<i>Wallet: </i><i>${addr}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${txId}">${txId}</a>`;
-    if (active) {
-        telegramServices.sendNotificationToHurryUpAlgo(body);
-    } else {
-        telegramServices.sendNotificationAlgo(body);
-    }
+function sendNotifyByAddr() {
+    timer2 = setInterval(() => {
+        if( intervalId1 === bigData1.length || bigData1.length === 0 ) {
+            clearInterval(timer2);
+            timer2 = null;
+            intervalId1 = 0;
+            bigData1 = [];
+        } else {
+            if( bigData1[intervalId1].active ){
+                telegramServices.sendNotificationToHurryUpAlgo(bigData1[intervalId1].item);
+            } else {
+                telegramServices.sendNotificationAlgo(bigData1[intervalId1].item);
+            }
+            intervalId1++;
+        }
+    }, 2500)
+    // body.forEach((item) => {
+        // if (active) {
+            // telegramServices.sendNotificationToHurryUpAlgo(body);
+        // } else {
+            // telegramServices.sendNotificationAlgo(body);
+        // }
+    // })
 }
+
 
 function IsExist(addr) {
     const temp = addressData.filter((item) => item.address === addr)
     return temp.length; 
+}
+
+function IsExistTx(arr, curTx) {
+    const temp = arr.filter((item) => item === curTx);
+    return temp.length;
 }
 
 router.get("/get/:uid", async (req, res) => {
@@ -206,6 +282,6 @@ router.post("/update", (req, res) => {
 
 setInterval(getAssets, 8000);
 
-setInterval(getSystemEvents, 30000);
+setInterval(getSystemEvents, 10000);
 
 module.exports = router;

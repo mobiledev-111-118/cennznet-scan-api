@@ -13,6 +13,7 @@ const setting = require("./routes/setting");
 const algoaddress = require("./routes/algoaddress");
 const algoasset = require("./routes/algoassets");
 const algosetting = require("./routes/algosetting");
+const algoholder = require("./routes/algoholder");
 
 const app = express();
 
@@ -36,6 +37,8 @@ app.use('/setting', setting);
 app.use('/algo_address', algoaddress);
 app.use('/algo_asset', algoasset);
 app.use('/algo_setting', algosetting);
+app.use('/algo_holder', algoholder);
+
 
 app.use((req, res, next) => {
     const err = new Error('Not Found');

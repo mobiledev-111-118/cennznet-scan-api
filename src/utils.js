@@ -57,7 +57,9 @@ const getTransaction = (qty, start, end) => {
 }
 
 const getTransactionsByAsset = (assetId, qty, start, end) => {
-    const url = `https://algoexplorerapi.io/idx2/v2/assets/${assetId}/transactions?currency-greater-than=${qty}&max-round=${end}&min-round=${start}`;
+    // const url = `https://algoexplorerapi.io/idx2/v2/assets/${assetId}/transactions?currency-greater-than=${qty}&max-round=${end}&min-round=${start}`;
+    const url = `https://algoexplorerapi.io/idx2/v2/transactions?asset-id=${assetId}&currency-greater-than=${qty}&max-round=${end}&min-round=${start}`;
+    
     return new Promise((resolve, reject) => {
         axios.get(url).then((res) => {
             if( res.status === 200 ) {
@@ -141,3 +143,4 @@ module.exports = {
     getAssetOne: getAssetOne,
     getTopHolders: getTopHolders,
 }
+
