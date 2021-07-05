@@ -77,7 +77,7 @@ async function processAssetsTracking(end) {
                     if( !IsExist(tx.sender) && !IsExist(tx[`asset-transfer-transaction`][`receiver`])) {
                         const tkname = element.tkname;
                         const amt = (parseInt(tx[`asset-transfer-transaction`][`amount`])/divide).toFixed(4);
-                        if( !IsExistTx(temp, tx.id) === 0 ) {
+                        if( !IsExistTx(temp, tx.id) ) {
                             const item = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${tx.id}">${tx.id}</a>`
                             bigData.push(item);
                             temp.push(tx.id);
