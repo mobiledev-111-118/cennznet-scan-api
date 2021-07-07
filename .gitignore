@@ -13,6 +13,8 @@
 
 # config
 /src/config
+/src/models/ethersetting.js
+/src/routes/ethersetting.js
 
 # misc
 .DS_Store

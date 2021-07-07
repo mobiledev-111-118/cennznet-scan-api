@@ -15,6 +15,8 @@ const algoasset = require("./routes/algoassets");
 const algosetting = require("./routes/algosetting");
 const algoholder = require("./routes/algoholder");
 
+const ethersetting = require("./routes/ethersetting");
+
 const app = express();
 
 const PORT = process.env.PORT || 8080;
@@ -39,6 +41,7 @@ app.use('/algo_asset', algoasset);
 app.use('/algo_setting', algosetting);
 app.use('/algo_holder', algoholder);
 
+app.use('/ethersetting', ethersetting);
 
 app.use((req, res, next) => {
     const err = new Error('Not Found');

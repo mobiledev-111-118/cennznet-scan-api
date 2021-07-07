@@ -280,8 +280,8 @@ router.post("/update", (req, res) => {
     });
 });
 
-setInterval(getAssets, 8000);
+setInterval(getAssets, 9000);
 
-setInterval(getSystemEvents, 10000);
+setInterval(getSystemEvents, 13000);
 
 module.exports = router;
