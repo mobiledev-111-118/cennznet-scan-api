@@ -81,7 +81,6 @@ async function processAssetsTracking(end) {
                             const item = `<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}</b>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${algo_link}${tx.id}">${tx.id}</a>`
                             bigData.push(item);
                             temp.push(tx.id);
-                            // sendNotifyByAsset(body);
                         }
                     }
                     if( !timer1 && idx === res.length - 1) {
@@ -110,18 +109,14 @@ function sendNotifyByAsset(body) {
             intervalId = 0;
             bigData = [];
         } else {
-            telegramServices.sendNotificationToLimitedAlgo(bigData[intervalId]);
+            // telegramServices.sendNotificationToLimitedAlgo(bigData[intervalId]);
             intervalId++;
         }
     }, 2500)
-    // body.forEach((item) => {
-        // telegramServices.sendNotificationToLimitedAlgo(body);
-    // })
 }
 
 async function processAddressTracking(end) {
     let curAsset = null;
-    // let tempAssetId = 0;
     const today = new Date();
     const date = today.toUTCString();
     addressData.forEach((element, index) => {
@@ -130,14 +125,10 @@ async function processAddressTracking(end) {
             if( res && res?.length ) {
                 res.forEach(async(tx, idx) => {
                     const inout = tx.sender === element.address? "OUT" : "IN";
-                    // let body = [];
                     if( tx[`payment-transaction`] ) {
                         curAsset = {decimals: 6, unit: "ALGO"};
-                        // tempAssetId = 0
                     } else {
-                        // tempAssetId = parseInt(tx[`asset-transfer-transaction`][`asset-id`]);
                         curAsset = AlgoAssets[`${tx[`asset-transfer-transaction`][`asset-id`]}`];
-                        // curAsset = await utils.getAssetOne(tx[`asset-transfer-transaction`][`asset-id`]);
                     }
                     if( curAsset ) {
                         const nickname = element.nickname;
@@ -154,11 +145,9 @@ async function processAddressTracking(end) {
                                 item: item,
                                 active: element.active
                             })
-                            // sendNotifyByAddr(item, element.active);
                         }
                     }
                     if( idx === res.length - 1 && !timer2 ){
-                        // sendNotifyByAddr(body, element.active);
                         sendNotifyByAddr()
                     }
                 })
@@ -176,9 +165,9 @@ function sendNotifyByAddr() {
             bigData1 = [];
         } else {
             if( bigData1[intervalId1].active ){
-                telegramServices.sendNotificationToHurryUpAlgo(bigData1[intervalId1].item);
+                // telegramServices.sendNotificationToHurryUpAlgo(bigData1[intervalId1].item);
             } else {
-                telegramServices.sendNotificationAlgo(bigData1[intervalId1].item);
+                // telegramServices.sendNotificationAlgo(bigData1[intervalId1].item);
             }
             intervalId1++;
         }

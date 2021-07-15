@@ -40,7 +40,7 @@ async function getSystemEvents() {
                                 to: event.data[2].toString(),
                                 amt: event.data[3]
                             };
-                            await processTransData(temp);
+                            // await processTransData(temp);
                         }
                     });
                 }
