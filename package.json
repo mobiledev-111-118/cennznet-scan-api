@@ -11,30 +11,29 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@cennznet/api": "^1.4.0",
-    "axios": "^0.21.1",
-    "babel-node": "0.0.1-security",
+    "@cennznet/api": "^1.5.0",
+    "axios": "^0.24.0",
     "bcryptjs": "^2.4.3",
     "body-parser": "^1.19.0",
-    "cookie-parser": "^1.4.5",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
     "jade": "^1.11.0",
-    "mysql2": "^2.2.5",
-    "nodemon": "^2.0.7",
+    "mysql2": "^2.3.3",
+    "nodemon": "^2.0.15",
     "path": "^0.12.7",
     "pug": "^3.0.2",
     "request": "^2.88.2",
-    "sequelize": "^6.6.2"
+    "sequelize": "^6.12.0-alpha.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.13.16",
-    "@babel/core": "^7.14.0",
-    "@babel/node": "^7.13.13",
+    "@babel/cli": "^7.16.0",
+    "@babel/core": "^7.16.0",
+    "@babel/node": "^7.16.0",
     "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.14.0",
-    "@babel/register": "^7.13.16"
+    "@babel/preset-env": "^7.16.4",
+    "@babel/register": "^7.16.0"
   }
 }

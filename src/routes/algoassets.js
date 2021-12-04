@@ -109,7 +109,7 @@ function sendNotifyByAsset(body) {
             intervalId = 0;
             bigData = [];
         } else {
-            // telegramServices.sendNotificationToLimitedAlgo(bigData[intervalId]);
+            telegramServices.sendNotificationToLimitedAlgo(bigData[intervalId]);
             intervalId++;
         }
     }, 2500)
@@ -165,20 +165,20 @@ function sendNotifyByAddr() {
             bigData1 = [];
         } else {
             if( bigData1[intervalId1].active ){
-                // telegramServices.sendNotificationToHurryUpAlgo(bigData1[intervalId1].item);
+                telegramServices.sendNotificationToHurryUpAlgo(bigData1[intervalId1].item);
             } else {
-                // telegramServices.sendNotificationAlgo(bigData1[intervalId1].item);
+                telegramServices.sendNotificationAlgo(bigData1[intervalId1].item);
             }
             intervalId1++;
         }
     }, 2500)
-    // body.forEach((item) => {
-        // if (active) {
-            // telegramServices.sendNotificationToHurryUpAlgo(body);
-        // } else {
-            // telegramServices.sendNotificationAlgo(body);
-        // }
-    // })
+    body.forEach((item) => {
+        if (active) {
+            telegramServices.sendNotificationToHurryUpAlgo(body);
+        } else {
+            telegramServices.sendNotificationAlgo(body);
+        }
+    })
 }
 
 

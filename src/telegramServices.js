@@ -6,6 +6,8 @@ const {
     ALGO_TELE_BOT_TOKEN, ALGO_TELE_GROUP_ID,
     ALGO_HURRYUP_BOT_TOKEN, ALGO_HURRYUP_CHAT_ID,
     ALGO_LIMIT_BOT_TOKEN, ALGO_LIMIT_CHAT_ID,
+    my_bot,
+    my_bot_chat_id
 } = require("./config/urls");
 
 const sendNotification = (body) => {
@@ -19,6 +21,34 @@ const sendNotification = (body) => {
             };
             request({
                 uri: `https://api.telegram.org/bot${TELE_BOT_TOKEN}/sendMessage`,
+                method: "POST",
+                json: data
+            }, function(err, res, bdy){
+                if( !err ) {
+                    resolve("Done!");
+                } else {
+                    console.log(err);
+                    reject(err);
+                }
+            })
+        } catch(e) {
+            reject(e);
+        }
+    })
+};
+
+
+const sendNotificationCennzX = (body) => {
+
+    return new Promise((resolve, reject) => {
+        try {
+            let data = {
+                chat_id: `${my_bot_chat_id}`,
+                parse_mode: "HTML",
+                text: body
+            };
+            request({
+                uri: `https://api.telegram.org/bot${my_bot}/sendMessage`,
                 method: "POST",
                 json: data
             }, function(err, res, bdy){
@@ -173,5 +203,6 @@ module.exports = {
     sendNotificationToLimited: sendNotificationToLimited,
     sendNotificationAlgo: sendNotificationAlgo,
     sendNotificationToHurryUpAlgo: sendNotificationToHurryUpAlgo,
-    sendNotificationToLimitedAlgo: sendNotificationToLimitedAlgo
+    sendNotificationToLimitedAlgo: sendNotificationToLimitedAlgo,
+    sendNotificationCennzX: sendNotificationCennzX,
 }

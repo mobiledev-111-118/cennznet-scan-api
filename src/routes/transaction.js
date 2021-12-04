@@ -9,6 +9,52 @@ const telegramServices = require("../telegramServices");
 
 let assetData = null;
 
+const CENNZ_ID = 1;
+const CPAY_ID = 2;
+
+let cennzPrevAmt = 0;
+let cpayPrevAmt = 0;
+
+async function getBalanceStatus() {
+    const api = await Api.create({
+        provider: endpoint
+    });
+    // query and supplement liquidity
+    if (api){
+        const [poolAssetBalance, poolAssetBalanceCPAY] = [
+            await api.derive.cennzx.poolAssetBalance(CENNZ_ID),
+            await api.derive.cennzx.poolCoreAssetBalance(CENNZ_ID),
+        ];
+
+        const cennzAmt = parseInt(poolAssetBalance.toString())/10000;
+        const cpayAmt = parseInt(poolAssetBalanceCPAY.toString())/10000;
+
+        if (cennzPrevAmt === 0 || cpayPrevAmt === 0) {
+            cennzPrevAmt = cennzAmt;
+            cpayPrevAmt = cpayAmt;
+        } else if(cennzPrevAmt - cennzAmt !== 0){
+            const cennzDiff = cennzPrevAmt - cennzAmt;
+            const cpayDiff = cpayPrevAmt - cpayAmt;
+            const today = new Date();
+            const date = today.toUTCString();
+            let body = '';
+            if (cennzDiff > 0 && cpayDiff < 0){
+                body = `<b>${Math.abs(cpayDiff)} CPAY sold for ${cennzDiff} CENNZ.</b>\n<b>${date}</b>`;
+            }
+            if (cennzDiff < 0 && cpayDiff > 0) {
+                body = `<b>${cpayDiff} CPAY bought for ${Math.abs(cennzDiff)} CENNZ.</b>\n<b>${date}</b>`;
+            }
+
+            if (body !== ''){
+                telegramServices.sendNotificationCennzX(body);
+                cennzPrevAmt = cennzAmt;
+                cpayPrevAmt = cpayAmt;
+            }
+        }
+
+    }
+}
+
 function getSetting() {
     try {
         Transaction.findAll().then((res) => {
@@ -26,6 +72,7 @@ async function getSystemEvents() {
         const api = await Api.create({
             provider: endpoint
         });
+
         if( api ) {
             console.log("Connected!");
             api.query.system.events((events) => {
@@ -40,11 +87,14 @@ async function getSystemEvents() {
                                 to: event.data[2].toString(),
                                 amt: event.data[3]
                             };
-                            // await processTransData(temp);
+                            await processTransData(temp);
                         }
                     });
                 }
             })
+
+            // await getBalanceStatue(api);
+
         } else {
             console.log("Cannot connect to CENNZnet!");
             setTimeout(getSystemEvents, 2000);
@@ -66,6 +116,7 @@ async function processTransData(data) {
     if (currentAsset1.length > 0) {
         currentAsset = currentAsset1[0].dataValues;
     }
+
     const tkname = currentAsset === null ? Assets[`${data.id}`.replace(',', '')] : currentAsset.tkname;
     if (fromOne) {
         const body = `<i>NickName: </i><b>${fromOne.dataValues.nickname}</b>\n<i>Token: </i><b>${tkname}</b>\n<i>Qty: </i><b>${amt}(OUT)</b>\n<i>Wallet: </i><i>${data.from}</i>\n<i>DateTime: </i><i>${date}</i>\n<i>Link: </i><a href="${link}${data.from}">${data.from}</a>`;
@@ -128,7 +179,6 @@ router.get("/delete/:id", (req, res) => {
         res.json({ success: false, msg: error.message});
     });
 });
-
 
 router.post("/add", (req, res) => {
     Transaction.findOne({
@@ -194,5 +244,7 @@ router.get("/test", (req, res) =>{
 setInterval(getSetting, 5000);
 
 setTimeout(getSystemEvents, 8000);
+
+setInterval(getBalanceStatus, 10000);
 
 module.exports = router;
